@@ -6,6 +6,8 @@ model_path = "./Llama-3.2-1B"
 tokenizer = AutoTokenizer.from_pretrained(model_path)
 model = AutoModelForCausalLM.from_pretrained(model_path)
 
+SYSTEM_PROMPT = "あなたは日本語で回答するアシスタントです。常に日本語で答えてください。"
+
 while True:
     prompt = input(">>> ")
     inputs = tokenizer(prompt, return_tensors="pt")
