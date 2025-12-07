@@ -1,7 +1,10 @@
 Llama-3.2-1B
 mistral-1b
 venv
-data
+data/
+data/diaries/
 Llama-3.2-1B
 llm-env
 mistral-1B
+models
+.DS_Store
