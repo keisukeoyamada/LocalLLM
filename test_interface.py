@@ -2,7 +2,8 @@
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-model_path = "./Llama-3.2-1B"
+# model_path = "./Llama-3.2-1B"
+model_path = "./mistral-1b"
 tokenizer = AutoTokenizer.from_pretrained(model_path)
 model = AutoModelForCausalLM.from_pretrained(model_path)
 
