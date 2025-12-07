@@ -24,10 +24,27 @@
 - プロンプトはシンプルに: システム文 + コンテキスト + 質問。
 - 呼び出し: `resp = llm(full_prompt, max_tokens=200, temperature=0.7); resp["choices"][0]["text"]`
 
-## HF版 (例)
-- `AutoTokenizer/AutoModelForCausalLM.from_pretrained(MODEL_PATH)` を同じフォルダからロード。
-- `model.generation_config.pad_token_id = tokenizer.eos_token_id` を設定。
+## モデルと配置
+- ベースLLM (HF形式)
+  - Llama 3.2 1B: https://huggingface.co/meta-llama/Llama-3.2-1B
+    - 配置先: `./Llama-3.2-1B` （フォルダごと）
+  - Mistral 1B (例): https://huggingface.co/mistralai/Mistral-7B-v0.1 など手元のモデルに応じて
+    - 配置先: `./mistral-1b` （フォルダごと）
 - 生成は `do_sample=False` + `max_new_tokens` を短めにすると日本語安定。
+- GGUF量子化 (llama_cpp 用)
+  - ELYZA 8B GGUF (例): https://huggingface.co/elyza/Llama-3-ELYZA-JP-8B-GGUF
+    - 使用ファイル例: `Llama-3-ELYZA-JP-8B-Q5_K_M.gguf`
+    - 配置先: `./models/mmnga-elyza-8b/`
+
+- 埋め込みモデル (SentenceTransformer)
+  - paraphrase-multilingual-MiniLM-L12-v2: https://huggingface.co/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
+    - 配置先: `./models/paraphrase-multilingual-MiniLM-L12-v2/`
+    - コード指定: `SentenceTransformer("models/paraphrase-multilingual-MiniLM-L12-v2")`
+
+### 配置の基本ルール
+- HF形式モデルはフォルダごと `./<model_name>/` に置き、`AutoModelForCausalLM.from_pretrained("./<model_name>")` で参照。
+- GGUFは `./models/<任意フォルダ>/model.gguf` に置き、`Llama(model_path=".../model.gguf")` で参照。
+- 埋め込みモデルは `./models/<embed_dir>/` に置き、`SentenceTransformer(<そのパス>)` で参照。
 
 ## 埋め込みモデル
 - 推奨: `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`（ローカルに置くなら `models/paraphrase-multilingual-MiniLM-L12-v2/` を指定）。
