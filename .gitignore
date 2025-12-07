@@ -1,7 +1,8 @@
 Llama-3.2-1B
 mistral-1b
 venv
-data/
+data/diary_meta.json
+data/diary.index
 data/diaries/
 Llama-3.2-1B
 llm-env
