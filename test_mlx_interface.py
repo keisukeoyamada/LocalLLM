@@ -18,7 +18,7 @@ while True:
         model,
         tokenizer,
         prompt=full_prompt,
-        max_tokens=500,
+        max_tokens=2000,
         sampler=make_sampler(temp=0.7),
         verbose=True,
     )
