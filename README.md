@@ -3,7 +3,8 @@
 ## 構成
 - `test_interface.py` : HF Transformers でベースモデルを対話実行するシンプルREPL。
 - `test_RUG_interface.py` : HFモデル + SentenceTransformer + FAISS で日記RAG対話。
-- `test_RUG_cpp_interface.py` : `llama_cpp` + GGUFモデル + SentenceTransformer + FAISS で日記RAG対話。
+- `test_RAG_cpp_interface.py` : `llama_cpp` + GGUFモデル + SentenceTransformer + FAISS で日記RAG対話。Mac/Linux/Windows対応。
+- `test_RAG_mlx_interface.py` : MLX + SafeTensorsモデル + SentenceTransformer + FAISS で日記RAG対話。**Apple Silicon (M4) 専用**。
 - `build_diary_index.py` : `data/diaries` 配下のテキスト/MDをチャンク化→埋め込み→`data/diary.index` と `data/diary_meta.json` を生成。
 - `finetune.py` : `./mistral-1b` をLoRAで指示微調整するサンプル。
 - モデル: `Llama-3.2-1B`, `mistral-1b` (HF形式)、`models/mmnga-elyza-8b/...gguf` (GGUF量子化)。
@@ -18,6 +19,42 @@
 - 句点・改行・句読点で分割し、`max_chars`/`min_chars` を設定して長すぎ/短すぎを調整。
 - 見出しや記号だけの短文は `len(chunk.strip("#*- 　")) < 10` などで除外。
 - mdがノイズになる場合は拡張子で絞るか、メタに `kind` を入れて検索時にフィルタ。
+
+## MLX 版（Apple Silicon 専用）
+
+llama_cpp はクロスプラットフォームだが、MLX は Apple Silicon の Unified Memory に最適化されており、M4 では推論速度が20〜40%程度速くなる。
+
+### セットアップ
+
+```bash
+pip install mlx-lm
+
+# Gemma 3 27B 4bit（推奨・約16.8GB）
+huggingface-cli download mlx-community/gemma-3-27b-it-4bit --local-dir ./models/gemma-3-27b-mlx
+
+# ELYZA 8B 4bit（軽量・約5GB）
+huggingface-cli download mlx-community/Llama-3-ELYZA-JP-8B-4bit --local-dir ./models/Llama-3-ELYZA-JP-8B-mlx
+```
+
+### 実行
+
+```bash
+python test_mlx_interface.py      # RAGなし
+python test_RAG_mlx_interface.py  # RAGあり
+```
+
+スクリプト内の `MLX_MODEL_PATH` を変更することでモデルを切り替えられる。現在のデフォルトは `./models/gemma-3-27b-mlx`。
+
+### llama_cpp 版との使い分け
+
+| | `test_RAG_cpp_interface.py` | `test_RAG_mlx_interface.py` |
+|---|---|---|
+| バックエンド | llama_cpp (C++) | MLX |
+| モデル形式 | GGUF量子化 | SafeTensors (4bit) |
+| 動作環境 | Mac / Linux / Windows | Apple Silicon Mac のみ |
+| 速度 | 標準 | M4では高速 |
+
+---
 
 ## llama_cpp 版 (例)
 - モデル初期化: `Llama(model_path="./models/mmnga-elyza-8b/Llama-3-ELYZA-JP-8B-Q5_K_M.gguf", n_ctx=4096, n_gpu_layers=-1)`
@@ -35,6 +72,13 @@
   - ELYZA 8B GGUF (例): https://huggingface.co/elyza/Llama-3-ELYZA-JP-8B-GGUF
     - 使用ファイル例: `Llama-3-ELYZA-JP-8B-Q5_K_M.gguf`
     - 配置先: `./models/mmnga-elyza-8b/`
+- MLX形式 (mlx_lm 用)
+  - Gemma 3 27B MLX 4bit（推奨）: https://huggingface.co/mlx-community/gemma-3-27b-it-4bit
+    - 配置先: `./models/gemma-3-27b-mlx/`
+    - DL: `huggingface-cli download mlx-community/gemma-3-27b-it-4bit --local-dir ./models/gemma-3-27b-mlx`
+  - ELYZA 8B MLX 4bit（軽量）: https://huggingface.co/mlx-community/Llama-3-ELYZA-JP-8B-4bit
+    - 配置先: `./models/Llama-3-ELYZA-JP-8B-mlx/`
+    - DL: `huggingface-cli download mlx-community/Llama-3-ELYZA-JP-8B-4bit --local-dir ./models/Llama-3-ELYZA-JP-8B-mlx`
 
 - 埋め込みモデル (SentenceTransformer)
   - paraphrase-multilingual-MiniLM-L12-v2: https://huggingface.co/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
@@ -53,3 +97,14 @@
 ## gitignore の扱い
 - `data/` は追跡対象外にする (`data/` を `.gitignore` に記載、追跡済みなら `git rm -r --cached data`）。
 - `models/` を残しつつ中身を無視する場合: `models/.gitignore` に
+
+## スペック計測
+2026/04/01
+- gemma-3-27b-mlx
+  Prompt: 35 tokens, 11.840 tokens-per-sec
+  Generation: 240 tokens, 6.608 tokens-per-sec
+  Peak memory: 16.298 GB
+- gemma-3-27b-gguf
+[322 tokens, 4.4 tok/s]
+
+mlxだと1.5倍の速度
