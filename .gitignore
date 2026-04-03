@@ -10,3 +10,6 @@ mistral-1B
 models/*
 !models/.gitkeep
 .DS_Store
+.claude/*
+CLAUDE.md
+*メモ*
